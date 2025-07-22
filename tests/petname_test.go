@@ -1,4 +1,4 @@
-package hello_test
+package grpc_test
 
 import (
 	"context"
@@ -14,17 +14,19 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	pb "yadro.com/tests/proto"
+	pb "yadro.com/tests/proto/petname"
 )
 
-const grpcAddress = "localhost:28081"
+const petnameAddress = "localhost:28081"
 
-func TestPreflight(t *testing.T) {
+func TestPetnamePreflight(t *testing.T) {
 	require.Equal(t, true, true)
 }
 
-func TestGrpcPing(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func TestGrpcPetnamePing(t *testing.T) {
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -36,7 +38,9 @@ func TestGrpcPing(t *testing.T) {
 }
 
 func TestGrpcPetname(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -60,7 +64,9 @@ func TestGrpcPetname(t *testing.T) {
 }
 
 func TestGrpcPetnameNoWords(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -73,7 +79,9 @@ func TestGrpcPetnameNoWords(t *testing.T) {
 }
 
 func TestGrpcPetnameNegativeWords(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -86,7 +94,9 @@ func TestGrpcPetnameNegativeWords(t *testing.T) {
 }
 
 func TestGrpcPetnameStream(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -119,7 +129,9 @@ func TestGrpcPetnameStream(t *testing.T) {
 }
 
 func TestGrpcPetnameStreamNoWords(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -137,7 +149,9 @@ func TestGrpcPetnameStreamNoWords(t *testing.T) {
 }
 
 func TestGrpcPetnameStreamNegativeWords(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -155,7 +169,9 @@ func TestGrpcPetnameStreamNegativeWords(t *testing.T) {
 }
 
 func TestGrpcPetnameStreamNoNames(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)
@@ -173,7 +189,9 @@ func TestGrpcPetnameStreamNoNames(t *testing.T) {
 }
 
 func TestGrpcPetnameStreamNegativeNames(t *testing.T) {
-	conn, err := grpc.NewClient(grpcAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		petnameAddress, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	require.NoError(t, err)
 	defer conn.Close()
 	c := pb.NewPetnameGeneratorClient(conn)

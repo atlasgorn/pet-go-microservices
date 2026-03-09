@@ -7,9 +7,12 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	wordspb "yadro.com/course/proto/words"
+	"yadro.com/course/words/words"
 )
 
 type server struct {
@@ -20,9 +23,19 @@ func (s *server) Ping(_ context.Context, in *emptypb.Empty) (*emptypb.Empty, err
 	return nil, nil
 }
 
+const maxMessageSize = 4 << 10 // 4 KiB
+
 func (s *server) Norm(_ context.Context, in *wordspb.WordsRequest) (*wordspb.WordsReply, error) {
+	size := len(in.Phrase)
+	if size > maxMessageSize {
+		return nil, status.Errorf(codes.ResourceExhausted,
+			"message size %d bytes exceeds maximum allowed size of %d bytes",
+			size, maxMessageSize)
+	}
+	result := words.Normalize(in.Phrase)
+
 	return &wordspb.WordsReply{
-		Words: []string{"I", "am", "not", "implemented"},
+		Words: result,
 	}, nil
 }
 

@@ -4,8 +4,11 @@ import (
 	"context"
 	"flag"
 	"log"
+	"log/slog"
 	"net"
+	"os"
 
+	"github.com/ilyakaznacheev/cleanenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
@@ -39,12 +42,34 @@ func (s *server) Norm(_ context.Context, in *wordspb.WordsRequest) (*wordspb.Wor
 	}, nil
 }
 
+type Config struct {
+	Port string `yaml:"port" env:"WORDS_GRPC_PORT" env-default:"8080"`
+}
+
 func main() {
-	var address string
-	flag.StringVar(&address, "address", ":8080", "server address")
+	var configPath string
+	flag.StringVar(&configPath, "config", "", "path to config file")
 	flag.Parse()
 
-	listener, err := net.Listen("tcp", address)
+	var cfg Config
+
+	if configPath != "" {
+		if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+			slog.Error("Error reading config file", "error", err)
+			os.Exit(1)
+		}
+	}
+
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
+		slog.Error("Error reading environment variables", "error", err)
+		os.Exit(1)
+	}
+
+	if cfg.Port == "" {
+		cfg.Port = "8080"
+	}
+
+	listener, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

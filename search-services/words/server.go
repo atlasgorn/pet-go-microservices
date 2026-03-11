@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"log/slog"
 	"net"
 	"os"
@@ -48,30 +47,19 @@ type Config struct {
 
 func main() {
 	var configPath string
-	flag.StringVar(&configPath, "config", "", "path to config file")
+	flag.StringVar(&configPath, "config", "config.yaml", "configuration file")
 	flag.Parse()
 
 	var cfg Config
-
-	if configPath != "" {
-		if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-			slog.Error("Error reading config file", "error", err)
-			os.Exit(1)
-		}
-	}
-
-	if err := cleanenv.ReadEnv(&cfg); err != nil {
-		slog.Error("Error reading environment variables", "error", err)
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		slog.Error("Error reading config file", "error", err)
 		os.Exit(1)
-	}
-
-	if cfg.Port == "" {
-		cfg.Port = "8080"
 	}
 
 	listener, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		slog.Error("failed to listen", "error", err)
+		os.Exit(1)
 	}
 
 	s := grpc.NewServer()
@@ -79,6 +67,7 @@ func main() {
 	reflection.Register(s)
 
 	if err := s.Serve(listener); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		slog.Error("failed to serve", "error", err)
+		os.Exit(1)
 	}
 }

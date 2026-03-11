@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"log/slog"
 	"net"
 	"os"
@@ -43,7 +42,7 @@ func (s *server) GenerateMany(req *petnamepb.PetnameStreamRequest, stream petnam
 	if req.Names <= 0 {
 		return status.Errorf(codes.InvalidArgument, "name count must be positive, got: %d", req.Names)
 	}
-	for i := int64(0); i < req.Names; i++ {
+	for range req.Names {
 		name := petname.Generate(int(req.Words), req.Separator)
 		if err := stream.Send(&petnamepb.PetnameResponse{Name: name}); err != nil {
 			return status.Errorf(codes.Internal, "failed to send name: %v", err)
@@ -59,30 +58,19 @@ type Config struct {
 
 func main() {
 	var configPath string
-	flag.StringVar(&configPath, "config", "", "path to config file")
+	flag.StringVar(&configPath, "config", "config.yaml", "configuration file")
 	flag.Parse()
 
 	var cfg Config
-
-	if configPath != "" {
-		if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-			slog.Error("Error reading config file", "error", err)
-			os.Exit(1)
-		}
-	}
-
-	if err := cleanenv.ReadEnv(&cfg); err != nil {
-		slog.Error("Error reading environment variables", "error", err)
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		slog.Error("Error reading config file", "error", err)
 		os.Exit(1)
-	}
-
-	if cfg.Port == "" {
-		cfg.Port = "8080"
 	}
 
 	listener, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		slog.Error("failed to listen", "error", err)
+		os.Exit(1)
 	}
 
 	s := grpc.NewServer()
@@ -90,6 +78,7 @@ func main() {
 	reflection.Register(s)
 
 	if err := s.Serve(listener); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		slog.Error("failed to serve", "error", err)
+		os.Exit(1)
 	}
 }

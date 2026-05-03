@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/kljensen/snowball v0.10.0
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect

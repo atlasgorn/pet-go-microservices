@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
+	"strings"
 
 	"yadro.com/course/api/adapters/rest"
 	"yadro.com/course/api/adapters/words"
@@ -25,24 +25,29 @@ func main() {
 	cfg := config.MustLoad(configPath)
 	fmt.Println(cfg)
 
-	log := mustMakeLogger("log level from config")
+	log := mustMakeLogger(cfg.LogLevel)
 
 	log.Info("starting server")
 	log.Debug("debug messages are enabled")
 
-	wordsClient, err := words.NewClient("address of words service", log)
+	wordsClient, err := words.NewClient(cfg.WordsAddress, log)
 	if err != nil {
 		log.Error("cannot init words adapter", "error", err)
 		os.Exit(1)
 	}
+	defer func() {
+		if err := wordsClient.Close(); err != nil {
+			log.Error("Error closing connection", "error", err)
+		}
+	}()
 
 	mux := http.NewServeMux()
-	// mux.Handle("GET /api/words", rest.NewWordsHandler(...)) to be implemented
+	mux.Handle("GET /api/words", rest.NewWordsHandler(log, wordsClient))
 	mux.Handle("GET /ping", rest.NewPingHandler(log, map[string]core.Pinger{"words": wordsClient}))
 
 	server := http.Server{
-		Addr:        "localhost:8888",    // replace with address from config
-		ReadTimeout: 10000 * time.Second, // replace with timeout from config
+		Addr:        cfg.HTTPServer.Address,
+		ReadTimeout: cfg.HTTPServer.Timeout,
 		Handler:     mux,
 	}
 
@@ -63,9 +68,21 @@ func main() {
 			return
 		}
 	}
-
 }
 
-func mustMakeLogger(logLevel string) *slog.Logger {
-	return slog.Default()
+func mustMakeLogger(level string) *slog.Logger {
+	var l slog.Level
+	switch strings.ToUpper(level) {
+	case "DEBUG":
+		l = slog.LevelDebug
+	case "INFO":
+		l = slog.LevelInfo
+	case "WARN":
+		l = slog.LevelWarn
+	case "ERROR":
+		l = slog.LevelError
+	default:
+		l = slog.LevelInfo
+	}
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: l}))
 }

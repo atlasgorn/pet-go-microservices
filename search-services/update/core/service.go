@@ -16,13 +16,14 @@ type Service struct {
 	db          DB
 	xkcd        XKCD
 	words       Words
+	broker      Broker
 	concurrency int
 	status      ServiceStatus
 	lock        sync.Mutex
 }
 
 func NewService(
-	log *slog.Logger, db DB, xkcd XKCD, words Words, concurrency int,
+	log *slog.Logger, db DB, xkcd XKCD, words Words, broker Broker, concurrency int,
 ) (*Service, error) {
 	if concurrency < 1 {
 		return nil, fmt.Errorf("wrong concurrency specified: %d", concurrency)
@@ -32,6 +33,7 @@ func NewService(
 		db:          db,
 		xkcd:        xkcd,
 		words:       words,
+		broker:      broker,
 		concurrency: concurrency,
 		status:      StatusIdle,
 	}, nil
@@ -154,6 +156,11 @@ func (s *Service) Update(ctx context.Context) error {
 		return fmt.Errorf("update completed with %d errors: %w", len(errs), errs[0])
 	}
 
+	err = s.broker.NotifyDBUpdate()
+	if err != nil {
+		s.log.Error("failed notifying db update", "error", err)
+	}
+
 	s.log.InfoContext(ctx, "update completed successfully")
 	return nil
 }
@@ -181,5 +188,14 @@ func (s *Service) Drop(ctx context.Context) error {
 	}
 	defer s.lock.Unlock()
 
-	return s.db.Drop(ctx)
+	if err := s.db.Drop(ctx); err != nil {
+		return err
+	}
+
+	err := s.broker.NotifyDBUpdate()
+	if err != nil {
+		s.log.Error("failed notifying db update", "error", err)
+	}
+
+	return nil
 }

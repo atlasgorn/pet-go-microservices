@@ -20,4 +20,5 @@ type Words interface {
 
 type Indexer interface {
 	ISearchComics(ctx context.Context, limit int, phrase []string) ([]PbComic, error)
+	Build(ctx context.Context) error
 }

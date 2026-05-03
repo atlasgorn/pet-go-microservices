@@ -15,6 +15,7 @@ import (
 	updatepb "yadro.com/course/proto/update"
 	"yadro.com/course/update/adapters/db"
 	updategrpc "yadro.com/course/update/adapters/grpc"
+	"yadro.com/course/update/adapters/nats"
 	"yadro.com/course/update/adapters/words"
 	"yadro.com/course/update/adapters/xkcd"
 	"yadro.com/course/update/config"
@@ -63,8 +64,14 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}
 	defer closers.CloseOrLog(words, log)
 
+	nats, err := nats.NewClient(log, cfg.NatsAddress)
+	if err != nil {
+		return fmt.Errorf("failed create nats service: %v", err)
+	}
+	defer nats.Close()
+
 	// service
-	updater, err := core.NewService(log, storage, xkcd, words, cfg.XKCD.Concurrency)
+	updater, err := core.NewService(log, storage, xkcd, words, nats, cfg.XKCD.Concurrency)
 	if err != nil {
 		return fmt.Errorf("failed create Update service: %v", err)
 	}

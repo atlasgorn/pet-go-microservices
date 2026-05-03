@@ -20,6 +20,7 @@ type Config struct {
 	XKCD         XKCD   `yaml:"https://xkcd.com"`
 	DBAddress    string `yaml:"db_address" env:"DB_ADDRESS" env-default:"localhost:82"`
 	WordsAddress string `yaml:"words_address" env:"WORDS_ADDRESS" env-default:"localhost:81"`
+	NatsAddress  string `yaml:"broker_address" env:"BROKER_ADDRESS" env-default:"localhost:4222"`
 }
 
 func MustLoad(configPath string) Config {

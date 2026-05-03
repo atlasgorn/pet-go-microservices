@@ -12,6 +12,7 @@ type Config struct {
 	Address      string        `yaml:"search_address" env:"SEARCH_ADDRESS" env-default:"localhost:80"`
 	DBAddress    string        `yaml:"db_address" env:"DB_ADDRESS" env-default:"localhost:82"`
 	WordsAddress string        `yaml:"words_address" env:"WORDS_ADDRESS" env-default:"localhost:81"`
+	NatsAddress  string        `yaml:"broker_address" env:"BROKER_ADDRESS" env-default:"localhost:4222"`
 	IndexTTL     time.Duration `yaml:"index_ttl" env:"INDEX_TTL" env-default:"20s"`
 }
 

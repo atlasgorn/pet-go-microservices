@@ -73,7 +73,7 @@ func (i *Indexer) ISearchComics(ctx context.Context, limit int, phrase []string)
 	return out, nil
 }
 
-func (i *Indexer) build(ctx context.Context) error {
+func (i *Indexer) Build(ctx context.Context) error {
 	comics, err := i.db.GetAllComics(ctx)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (i *Indexer) build(ctx context.Context) error {
 
 func (i *Indexer) Run(ctx context.Context) {
 	i.log.InfoContext(ctx, "running indexer")
-	if err := i.build(ctx); err != nil {
+	if err := i.Build(ctx); err != nil {
 		i.log.ErrorContext(ctx, "error building index", "error", err)
 	} else {
 		i.log.InfoContext(ctx, "index build successfully")
@@ -125,7 +125,7 @@ func (i *Indexer) Run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			i.log.InfoContext(ctx, "running indexer")
-			if err := i.build(ctx); err != nil {
+			if err := i.Build(ctx); err != nil {
 				i.log.ErrorContext(ctx, "error building index", "error", err)
 			} else {
 				i.log.InfoContext(ctx, "index build successfully")

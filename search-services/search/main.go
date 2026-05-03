@@ -16,6 +16,7 @@ import (
 	"yadro.com/course/search/adapters/db"
 	searchgrpc "yadro.com/course/search/adapters/grpc"
 	"yadro.com/course/search/adapters/index"
+	"yadro.com/course/search/adapters/nats"
 	"yadro.com/course/search/adapters/words"
 	"yadro.com/course/search/config"
 	"yadro.com/course/search/core"
@@ -71,6 +72,12 @@ func run(cfg config.Config, log *slog.Logger) error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
+	nats, err := nats.NewServer(log, cfg.NatsAddress, indexer)
+	if err != nil {
+		return fmt.Errorf("failed create nats service: %v", err)
+	}
+	defer nats.Close()
+
 	s := grpc.NewServer()
 	searchpb.RegisterSearchServer(s, searchgrpc.NewServer(search))
 	reflection.Register(s)
@@ -78,6 +85,11 @@ func run(cfg config.Config, log *slog.Logger) error {
 	// context for Ctrl-C
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+
+	if err := nats.Run(ctx); err != nil {
+		log.Error("failed to subscribe to nats", "error", err)
+		return fmt.Errorf("nats subscription: %w", err)
+	}
 
 	go indexer.Run(ctx)
 

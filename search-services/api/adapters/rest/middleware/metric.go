@@ -10,24 +10,12 @@ import (
 
 type responseWriter struct {
 	http.ResponseWriter
-	code        int
-	wroteHeader bool
+	code int
 }
 
 func (rw *responseWriter) WriteHeader(statusCode int) {
-	if rw.wroteHeader {
-		return
-	}
 	rw.code = statusCode
-	rw.wroteHeader = true
 	rw.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (rw *responseWriter) Write(b []byte) (int, error) {
-	if !rw.wroteHeader {
-		rw.WriteHeader(http.StatusOK)
-	}
-	return rw.ResponseWriter.Write(b)
 }
 
 func WithMetrics(next http.Handler) http.Handler {

@@ -77,10 +77,13 @@ services:
       - XKCD_URL=https://xkcd.com
       - XKCD_CONCURRENCY=10
       - WORDS_ADDRESS=words:8080
+      - BROKER_ADDRESS=nats://nats:4222
     depends_on:
       postgres:
         condition: service_healthy
       words:
+        condition: service_started
+      nats:
         condition: service_started
 
   tests:
@@ -122,33 +125,12 @@ services:
     depends_on:
       - postgres
 
-  victoriametrics:
-    image: victoriametrics/victoria-metrics:v1.125.0
-    container_name: victoriametrics
+  nats:
+    image: nats
+    container_name: nats
     ports:
-      - 8428:8428
-    volumes:
-      - vmdata:/storage
-      - ./metrics/promscrape.yml:/etc/promscrape.yml
-    command:
-      - "--storageDataPath=/storage"
-      - "--httpListenAddr=:8428"
-      - "--promscrape.config=/etc/promscrape.yml"
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:12.2.0
-    container_name: grafana
-    depends_on:
-      - "victoriametrics"
-    ports:
-      - 3000:3000
-    volumes:
-      - grafanadata:/var/lib/grafana
-    restart: unless-stopped
+      - "4222:4222"
 
 volumes:
   postgres:
   pgadmin:
-  vmdata:
-  grafanadata:

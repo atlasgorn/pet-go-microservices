@@ -42,7 +42,6 @@ func (c Client) Status(ctx context.Context) (core.UpdateStatus, error) {
 		return core.StatusUpdateUnknown, err
 	}
 
-	// Map the protobuf enum to your core status type
 	var status core.UpdateStatus
 	switch reply.Status {
 	case updatepb.Status_STATUS_IDLE:

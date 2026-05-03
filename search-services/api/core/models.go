@@ -14,3 +14,8 @@ type UpdateStats struct {
 	ComicsFetched int `json:"comics_fetched"`
 	ComicsTotal   int `json:"comics_total"`
 }
+
+type PbComic struct {
+	ID  int    `json:"id"`
+	URL string `json:"url"`
+}

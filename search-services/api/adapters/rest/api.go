@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"yadro.com/course/api/core"
 )
@@ -106,5 +107,52 @@ func NewDropHandler(log *slog.Logger, updater core.Updater) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+type SearchResponse struct {
+	Comics []core.PbComic `json:"comics"`
+	Total  int            `json:"total"`
+}
+
+const defaultLimit = 10
+
+func NewSearchHandler(log *slog.Logger, searcher core.Searcher) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+		if err != nil {
+			limit = defaultLimit
+		}
+
+		if limit <= 0 {
+			http.Error(w, "invalid limit parameter", http.StatusBadRequest)
+			return
+		}
+
+		phrase := r.URL.Query().Get("phrase")
+		if phrase == "" {
+			http.Error(w, "missing phrase parameter", http.StatusBadRequest)
+			return
+		}
+
+		comics, err := searcher.Search(ctx, limit, phrase)
+		if err != nil {
+			log.Error("cannot search", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		response := SearchResponse{
+			Comics: comics,
+			Total:  len(comics),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("cannot encode response", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 }

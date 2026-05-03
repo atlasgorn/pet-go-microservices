@@ -48,6 +48,7 @@ func (c Client) Get(ctx context.Context, id int) (core.XKCDInfo, error) {
 		URL         string `json:"img"`
 		Title       string `json:"title"`
 		Description string `json:"transcript"`
+		Alternative string `json:"alt"`
 	}{}
 
 	err = json.Unmarshal(body, &data)
@@ -59,7 +60,7 @@ func (c Client) Get(ctx context.Context, id int) (core.XKCDInfo, error) {
 		ID:          data.ID,
 		URL:         data.URL,
 		Title:       data.Title,
-		Description: data.Description,
+		Description: data.Description + data.Alternative,
 	}, nil
 }
 

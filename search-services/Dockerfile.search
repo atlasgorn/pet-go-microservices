@@ -11,19 +11,18 @@ WORKDIR /src
 RUN go mod download
 
 COPY proto /src/proto
-COPY api /src/api
+COPY search /src/search
 COPY closers /src/closers
 
 RUN protoc --go_out=. \
     --go_opt=paths=source_relative \
     --go-grpc_out=. \
     --go-grpc_opt=paths=source_relative \
-    proto/words/words.proto
+    proto/search/search.proto
 
 ENV CGO_ENABLED=0
-RUN go build -o /api api/main.go
+RUN go build -o /search search/main.go
 
 FROM alpine:3.20
-COPY --from=build /api /api
-ENTRYPOINT [ "/api" ]
-
+COPY --from=build /search /search
+ENTRYPOINT [ "/search" ]

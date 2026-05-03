@@ -35,3 +35,16 @@ func (s *Server) Search(ctx context.Context, req *searchpb.SearchRequest) (*sear
 	}
 	return &reply, nil
 }
+
+func (s *Server) ISearch(ctx context.Context, req *searchpb.SearchRequest) (*searchpb.SearchReply, error) {
+	comics, err := s.service.ISearch(context.Background(), int(req.Limit), req.Phrase)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	var reply searchpb.SearchReply
+	for _, comic := range comics {
+		reply.Comics = append(reply.Comics, &searchpb.Comic{Id: int64(comic.ID), Url: comic.URL})
+	}
+	return &reply, nil
+}

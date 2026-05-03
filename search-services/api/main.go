@@ -62,6 +62,7 @@ func run() int {
 	mux.Handle("GET /api/db/status", rest.NewUpdateStatusHandler(log, updateClient))
 	mux.Handle("DELETE /api/db", rest.NewDropHandler(log, updateClient))
 	mux.Handle("GET /api/search", rest.NewSearchHandler(log, searchClient))
+	mux.Handle("GET /api/isearch", rest.NewISearchHandler(log, searchClient))
 	mux.Handle("GET /api/ping", rest.NewPingHandler(log, map[string]core.Pinger{"update": updateClient, "words": wordsClient, "search": searchClient}))
 
 	server := http.Server{

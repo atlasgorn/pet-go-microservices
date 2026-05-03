@@ -24,4 +24,6 @@ service Search {
   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
   rpc Search(SearchRequest) returns (SearchReply) {}
+
+  rpc ISearch(SearchRequest) returns (SearchReply) {}
 }

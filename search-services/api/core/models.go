@@ -9,13 +9,13 @@ const (
 )
 
 type UpdateStats struct {
-	WordsTotal    int `json:"words_total"`
-	WordsUnique   int `json:"words_unique"`
-	ComicsFetched int `json:"comics_fetched"`
-	ComicsTotal   int `json:"comics_total"`
+	WordsTotal    int
+	WordsUnique   int
+	ComicsFetched int
+	ComicsTotal   int
 }
 
 type PbComic struct {
-	ID  int    `json:"id"`
-	URL string `json:"url"`
+	ID  int
+	URL string
 }

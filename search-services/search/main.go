@@ -15,6 +15,7 @@ import (
 	searchpb "yadro.com/course/proto/search"
 	"yadro.com/course/search/adapters/db"
 	searchgrpc "yadro.com/course/search/adapters/grpc"
+	"yadro.com/course/search/adapters/index"
 	"yadro.com/course/search/adapters/words"
 	"yadro.com/course/search/config"
 	"yadro.com/course/search/core"
@@ -53,8 +54,13 @@ func run(cfg config.Config, log *slog.Logger) error {
 	}
 	defer closers.CloseOrLog(words, log)
 
+	indexer, err := index.New(log, storage, cfg.IndexTTL)
+	if err != nil {
+		return fmt.Errorf("failed create indexer service: %v", err)
+	}
+
 	// service
-	search, err := core.NewService(log, storage, words)
+	search, err := core.NewService(log, storage, words, indexer)
 	if err != nil {
 		return fmt.Errorf("failed create search service: %v", err)
 	}
@@ -72,6 +78,8 @@ func run(cfg config.Config, log *slog.Logger) error {
 	// context for Ctrl-C
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+
+	go indexer.Run(ctx)
 
 	go func() {
 		<-ctx.Done()

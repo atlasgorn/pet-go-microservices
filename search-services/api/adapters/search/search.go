@@ -50,6 +50,22 @@ func (c Client) Search(ctx context.Context, limit int, phrase string) ([]core.Pb
 	return results, nil
 }
 
+func (c Client) ISearch(ctx context.Context, limit int, phrase string) ([]core.PbComic, error) {
+	resp, err := c.client.ISearch(ctx, &searchpb.SearchRequest{Limit: int64(limit), Phrase: phrase})
+	if err != nil {
+		return nil, err
+	}
+	results := make([]core.PbComic, 0, len(resp.Comics))
+	for _, comic := range resp.Comics {
+		results = append(results, core.PbComic{
+			ID:  int(comic.Id),
+			URL: comic.Url,
+		})
+	}
+
+	return results, nil
+}
+
 func (c Client) Close() error {
 	return c.conn.Close()
 }

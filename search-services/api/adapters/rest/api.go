@@ -10,13 +10,13 @@ import (
 	"yadro.com/course/api/core"
 )
 
-type PingResponse struct {
+type pingResponse struct {
 	Replies map[string]string `json:"replies"`
 }
 
 func NewPingHandler(log *slog.Logger, pingers map[string]core.Pinger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reply := PingResponse{
+		reply := pingResponse{
 			Replies: make(map[string]string),
 		}
 		for name, pinger := range pingers {
@@ -53,6 +53,13 @@ func NewUpdateHandler(log *slog.Logger, updater core.Updater) http.HandlerFunc {
 	}
 }
 
+type updateStats struct {
+	WordsTotal    int `json:"words_total"`
+	WordsUnique   int `json:"words_unique"`
+	ComicsFetched int `json:"comics_fetched"`
+	ComicsTotal   int `json:"comics_total"`
+}
+
 func NewUpdateStatsHandler(log *slog.Logger, updater core.Updater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -64,15 +71,21 @@ func NewUpdateStatsHandler(log *slog.Logger, updater core.Updater) http.HandlerF
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		replyStats := updateStats{
+			WordsTotal:    stats.WordsTotal,
+			WordsUnique:   stats.WordsUnique,
+			ComicsFetched: stats.ComicsFetched,
+			ComicsTotal:   stats.ComicsTotal,
+		}
 
-		if err := json.NewEncoder(w).Encode(stats); err != nil {
-			log.Error("cannot encode ping response", "error", err)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(replyStats); err != nil {
+			log.Error("cannot encode response", "error", err)
 		}
 	}
 }
 
-type StatusResponse struct {
+type statusResponse struct {
 	Status core.UpdateStatus `json:"status"`
 }
 
@@ -87,11 +100,11 @@ func NewUpdateStatusHandler(log *slog.Logger, updater core.Updater) http.Handler
 			return
 		}
 
-		response := StatusResponse{Status: status}
+		response := statusResponse{Status: status}
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
-			log.Error("cannot encode ping response", "error", err)
+			log.Error("cannot encode response", "error", err)
 		}
 	}
 }
@@ -110,9 +123,14 @@ func NewDropHandler(log *slog.Logger, updater core.Updater) http.HandlerFunc {
 	}
 }
 
-type SearchResponse struct {
-	Comics []core.PbComic `json:"comics"`
-	Total  int            `json:"total"`
+type searchResponse struct {
+	Comics []pbComic `json:"comics"`
+	Total  int       `json:"total"`
+}
+
+type pbComic struct {
+	ID  int    `json:"id"`
+	URL string `json:"url"`
 }
 
 const defaultLimit = 10
@@ -143,8 +161,56 @@ func NewSearchHandler(log *slog.Logger, searcher core.Searcher) http.HandlerFunc
 			return
 		}
 
-		response := SearchResponse{
-			Comics: comics,
+		replyComics := make([]pbComic, len(comics))
+		for i, comic := range comics {
+			replyComics[i] = pbComic{ID: comic.ID, URL: comic.URL}
+		}
+		response := searchResponse{
+			Comics: replyComics,
+			Total:  len(comics),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("cannot encode response", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func NewISearchHandler(log *slog.Logger, searcher core.Searcher) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+		if err != nil {
+			limit = defaultLimit
+		}
+
+		if limit <= 0 {
+			http.Error(w, "invalid limit parameter", http.StatusBadRequest)
+			return
+		}
+
+		phrase := r.URL.Query().Get("phrase")
+		if phrase == "" {
+			http.Error(w, "missing phrase parameter", http.StatusBadRequest)
+			return
+		}
+
+		comics, err := searcher.ISearch(ctx, limit, phrase)
+		if err != nil {
+			log.Error("cannot search", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		replyComics := make([]pbComic, len(comics))
+		for i, comic := range comics {
+			replyComics[i] = pbComic{ID: comic.ID, URL: comic.URL}
+		}
+		response := searchResponse{
+			Comics: replyComics,
 			Total:  len(comics),
 		}
 

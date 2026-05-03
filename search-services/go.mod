@@ -9,6 +9,9 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/VictoriaMetrics/metrics v1.43.1 // indirect
+	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -22,7 +25,10 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
+	github.com/valyala/fastrand v1.1.0 // indirect
+	github.com/valyala/histogram v1.2.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/ratelimit v0.3.1 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -38,7 +44,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/kljensen/snowball v0.10.0
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.10.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect

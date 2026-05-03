@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/VictoriaMetrics/metrics"
 	"yadro.com/course/api/core"
 )
 
 func NewMetricsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		metrics.WritePrometheus(w, true)
 	}
 }
 
@@ -21,6 +23,26 @@ type Authenticator interface {
 
 func NewLoginHandler(log *slog.Logger, auth Authenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var creds struct {
+			Name     string `json:"name"`
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		token, err := auth.Login(creds.Name, creds.Password)
+		if err != nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if _, err := w.Write([]byte(token)); err != nil {
+			log.Error("cannot write response", "error", err)
+		}
 	}
 }
 

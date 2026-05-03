@@ -6,10 +6,14 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-const secretKey = "something secret here" // token sign key
-const adminRole = "superuser"             // token subject
+const (
+	secretKey = "something secret here" // token sign key
+	adminRole = "superuser"             // token subject
+)
 
 // Authentication, Authorization, Accounting
 type AAA struct {
@@ -38,9 +42,43 @@ func New(tokenTTL time.Duration, log *slog.Logger) (AAA, error) {
 }
 
 func (a AAA) Login(name, password string) (string, error) {
-	return "", errors.New("implement me")
+	storedPass, ok := a.users[name]
+	if !ok || storedPass != password {
+		return "", errors.New("invalid credentials")
+	}
+
+	claims := jwt.RegisteredClaims{
+		Subject:   adminRole,
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenTTL)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+	return signed, nil
 }
 
 func (a AAA) Verify(tokenString string) error {
-	return errors.New("implement me")
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(secretKey), nil
+	})
+	if err != nil {
+		return err
+	}
+	if !token.Valid {
+		return errors.New("invalid token")
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.New("invalid claims")
+	}
+	if sub, ok := claims["sub"]; !ok || sub != adminRole {
+		return errors.New("token subject is not superuser")
+	}
+	return nil
 }

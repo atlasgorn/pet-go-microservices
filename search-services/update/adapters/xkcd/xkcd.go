@@ -2,12 +2,15 @@ package xkcd
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
+	"yadro.com/course/closers"
 	"yadro.com/course/update/core"
 )
 
@@ -29,9 +32,59 @@ func NewClient(url string, timeout time.Duration, log *slog.Logger) (*Client, er
 }
 
 func (c Client) Get(ctx context.Context, id int) (core.XKCDInfo, error) {
-	return core.XKCDInfo{}, errors.New("implement me")
+	resp, err := c.client.Get(c.url + "/" + strconv.Itoa(id) + "/info.0.json")
+	if err != nil {
+		return core.XKCDInfo{}, fmt.Errorf("cannot get info for comic %d: %w", id, err)
+	}
+	defer closers.CloseOrLog(resp.Body, c.log)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return core.XKCDInfo{}, fmt.Errorf("cannot read response body: %w", err)
+	}
+
+	data := struct {
+		ID          int    `json:"num"`
+		URL         string `json:"img"`
+		Title       string `json:"title"`
+		Description string `json:"transcript"`
+	}{}
+
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return core.XKCDInfo{}, fmt.Errorf("cannot unmarshal response body: %w", err)
+	}
+
+	return core.XKCDInfo{
+		ID:          data.ID,
+		URL:         data.URL,
+		Title:       data.Title,
+		Description: data.Description,
+	}, nil
 }
 
 func (c Client) LastID(ctx context.Context) (int, error) {
-	return 0, errors.New("implement me")
+	resp, err := c.client.Get(c.url + "/info.0.json")
+	if err != nil {
+		return 0, fmt.Errorf("cannot get last XKCD info: %w", err)
+	}
+	defer closers.CloseOrLog(resp.Body, c.log)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, fmt.Errorf("cannot read response body: %w", err)
+	}
+
+	var data map[string]any
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return 0, fmt.Errorf("cannot unmarshal response body: %w", err)
+	}
+
+	num, ok := data["num"]
+	if !ok {
+		return 0, fmt.Errorf("response body does not contain num field")
+	}
+	id := int(num.(float64))
+	return id, nil
 }

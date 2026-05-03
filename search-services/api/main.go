@@ -11,10 +11,18 @@ import (
 
 	"yadro.com/course/api/adapters/rest"
 	"yadro.com/course/api/adapters/update"
+	"yadro.com/course/api/adapters/words"
 	"yadro.com/course/api/config"
+	"yadro.com/course/api/core"
+	"yadro.com/course/closers"
 )
 
 func main() {
+	code := run()
+	os.Exit(code)
+}
+
+func run() int {
 	var configPath string
 	flag.StringVar(&configPath, "config", "config.yaml", "server configuration file")
 	flag.Parse()
@@ -28,15 +36,24 @@ func main() {
 
 	updateClient, err := update.NewClient(cfg.UpdateAddress, log)
 	if err != nil {
-		log.Error("cannot init words adapter", "error", err)
-		os.Exit(1)
+		log.Error("cannot init update adapter", "error", err)
+		return 1
 	}
+	defer closers.CloseOrLog(updateClient, log)
+
+	wordsClient, err := words.NewClient(cfg.WordsAddress, log)
+	if err != nil {
+		log.Error("cannot init words adapter", "error", err)
+		return 1
+	}
+	defer closers.CloseOrLog(wordsClient, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("POST /api/db/update", rest.NewUpdateHandler(log, updateClient))
 	mux.Handle("GET /api/db/stats", rest.NewUpdateStatsHandler(log, updateClient))
 	mux.Handle("GET /api/db/status", rest.NewUpdateStatusHandler(log, updateClient))
 	mux.Handle("DELETE /api/db", rest.NewDropHandler(log, updateClient))
+	mux.Handle("GET /api/ping", rest.NewPingHandler(log, map[string]core.Pinger{"update": updateClient, "words": wordsClient}))
 
 	server := http.Server{
 		Addr:        cfg.HTTPConfig.Address,
@@ -59,9 +76,10 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			log.Error("server closed unexpectedly", "error", err)
-			return
+			return 1
 		}
 	}
+	return 0
 }
 
 func mustMakeLogger(logLevel string) *slog.Logger {

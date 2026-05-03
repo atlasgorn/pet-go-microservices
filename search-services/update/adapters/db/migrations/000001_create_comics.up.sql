@@ -1,1 +1,5 @@
-CREATE TABLE comics ();
+CREATE TABLE IF NOT EXISTS comics (
+    id SERIAL PRIMARY KEY,
+    url TEXT NOT NULL,
+    words TEXT[] NOT NULL
+);

@@ -15,9 +15,9 @@ type XKCD struct {
 }
 
 type Config struct {
-	LogLevel     string `yaml:"log_level" env:"LOG_LEVEL" env-default:"DEBUG"`
+	LogLevel     string `yaml:"log_level" env:"LOG_LEVEL" env-default:"INFO"`
 	Address      string `yaml:"update_address" env:"UPDATE_ADDRESS" env-default:"localhost:80"`
-	XKCD         XKCD   `yaml:"xkcd"`
+	XKCD         XKCD   `yaml:"https://xkcd.com"`
 	DBAddress    string `yaml:"db_address" env:"DB_ADDRESS" env-default:"localhost:82"`
 	WordsAddress string `yaml:"words_address" env:"WORDS_ADDRESS" env-default:"localhost:81"`
 }
@@ -25,7 +25,10 @@ type Config struct {
 func MustLoad(configPath string) Config {
 	var cfg Config
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		log.Fatalf("cannot read config %q: %s", configPath, err)
+		log.Printf("cannot read config %q: %s", configPath, err)
+		if err := cleanenv.ReadEnv(&cfg); err != nil {
+			log.Fatalf("cannot read env %s", err)
+		}
 	}
 	return cfg
 }

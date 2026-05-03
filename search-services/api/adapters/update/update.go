@@ -2,12 +2,13 @@ package update
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log/slog"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"yadro.com/course/api/core"
 	updatepb "yadro.com/course/proto/update"
 )
@@ -15,6 +16,7 @@ import (
 type Client struct {
 	log    *slog.Logger
 	client updatepb.UpdateClient
+	conn   *grpc.ClientConn
 }
 
 func NewClient(address string, log *slog.Logger) (*Client, error) {
@@ -25,26 +27,61 @@ func NewClient(address string, log *slog.Logger) (*Client, error) {
 	return &Client{
 		client: updatepb.NewUpdateClient(conn),
 		log:    log,
+		conn:   conn,
 	}, nil
 }
 
 func (c Client) Ping(ctx context.Context) error {
-	return fmt.Errorf("implement me")
+	_, err := c.client.Ping(ctx, &emptypb.Empty{})
+	return err
 }
 
 func (c Client) Status(ctx context.Context) (core.UpdateStatus, error) {
-	return core.StatusUpdateUnknown, errors.New("unknown status")
+	reply, err := c.client.Status(ctx, &emptypb.Empty{})
+	if err != nil {
+		return core.StatusUpdateUnknown, err
+	}
+
+	// Map the protobuf enum to your core status type
+	var status core.UpdateStatus
+	switch reply.Status {
+	case updatepb.Status_STATUS_IDLE:
+		status = core.StatusUpdateIdle
+	case updatepb.Status_STATUS_RUNNING:
+		status = core.StatusUpdateRunning
+	default:
+		status = core.StatusUpdateUnknown
+	}
+
+	return status, nil
 }
 
 func (c Client) Stats(ctx context.Context) (core.UpdateStats, error) {
-	return core.UpdateStats{}, nil
-
+	reply, err := c.client.Stats(ctx, &emptypb.Empty{})
+	if err != nil {
+		return core.UpdateStats{}, err
+	}
+	return core.UpdateStats{
+		WordsTotal:    int(reply.WordsTotal),
+		WordsUnique:   int(reply.WordsUnique),
+		ComicsFetched: int(reply.ComicsFetched),
+		ComicsTotal:   int(reply.ComicsTotal),
+	}, nil
 }
 
 func (c Client) Update(ctx context.Context) error {
-	return fmt.Errorf("implement me")
+	_, err := c.client.Update(ctx, &emptypb.Empty{})
+	if status.Code(err) == codes.AlreadyExists {
+		return core.ErrAlreadyExists
+	}
+	return err
 }
 
 func (c Client) Drop(ctx context.Context) error {
-	return fmt.Errorf("implement me")
+	_, err := c.client.Drop(ctx, &emptypb.Empty{})
+	return err
+}
+
+func (c Client) Close() error {
+	return c.conn.Close()
 }

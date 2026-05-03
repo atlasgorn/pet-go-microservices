@@ -2,6 +2,7 @@ package words
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"google.golang.org/grpc"
@@ -26,9 +27,10 @@ func NewClient(address string, log *slog.Logger) (*Client, error) {
 }
 
 func (c Client) Norm(ctx context.Context, phrase string) ([]string, error) {
-	return nil, nil
+	return nil, errors.New("implement me")
 }
 
 func (c Client) Ping(ctx context.Context) error {
-	return nil
+	_, err := c.client.Ping(ctx, nil)
+	return err
 }

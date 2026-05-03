@@ -4,17 +4,14 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 
 	"yadro.com/course/api/adapters/rest"
-	"yadro.com/course/api/adapters/words"
+	"yadro.com/course/api/adapters/update"
 	"yadro.com/course/api/config"
-	"yadro.com/course/api/core"
 )
 
 func main() {
@@ -23,31 +20,27 @@ func main() {
 	flag.Parse()
 
 	cfg := config.MustLoad(configPath)
-	fmt.Println(cfg)
 
 	log := mustMakeLogger(cfg.LogLevel)
 
 	log.Info("starting server")
 	log.Debug("debug messages are enabled")
 
-	wordsClient, err := words.NewClient(cfg.WordsAddress, log)
+	updateClient, err := update.NewClient(cfg.UpdateAddress, log)
 	if err != nil {
 		log.Error("cannot init words adapter", "error", err)
 		os.Exit(1)
 	}
-	defer func() {
-		if err := wordsClient.Close(); err != nil {
-			log.Error("Error closing connection", "error", err)
-		}
-	}()
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /api/words", rest.NewWordsHandler(log, wordsClient))
-	mux.Handle("GET /ping", rest.NewPingHandler(log, map[string]core.Pinger{"words": wordsClient}))
+	mux.Handle("POST /api/db/update", rest.NewUpdateHandler(log, updateClient))
+	mux.Handle("GET /api/db/stats", rest.NewUpdateStatsHandler(log, updateClient))
+	mux.Handle("GET /api/db/status", rest.NewUpdateStatusHandler(log, updateClient))
+	mux.Handle("DELETE /api/db", rest.NewDropHandler(log, updateClient))
 
 	server := http.Server{
-		Addr:        cfg.HTTPServer.Address,
-		ReadTimeout: cfg.HTTPServer.Timeout,
+		Addr:        cfg.HTTPConfig.Address,
+		ReadTimeout: cfg.HTTPConfig.Timeout,
 		Handler:     mux,
 	}
 
@@ -62,6 +55,7 @@ func main() {
 		}
 	}()
 
+	log.Info("Running HTTP server", "address", cfg.HTTPConfig.Address)
 	if err := server.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			log.Error("server closed unexpectedly", "error", err)
@@ -70,19 +64,18 @@ func main() {
 	}
 }
 
-func mustMakeLogger(level string) *slog.Logger {
-	var l slog.Level
-	switch strings.ToUpper(level) {
+func mustMakeLogger(logLevel string) *slog.Logger {
+	var level slog.Level
+	switch logLevel {
 	case "DEBUG":
-		l = slog.LevelDebug
+		level = slog.LevelDebug
 	case "INFO":
-		l = slog.LevelInfo
-	case "WARN":
-		l = slog.LevelWarn
+		level = slog.LevelInfo
 	case "ERROR":
-		l = slog.LevelError
+		level = slog.LevelError
 	default:
-		l = slog.LevelInfo
+		panic("unknown log level: " + logLevel)
 	}
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: l}))
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+	return slog.New(handler)
 }

@@ -10,6 +10,20 @@ import (
 	"yadro.com/course/api/core"
 )
 
+func NewMetricsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+	}
+}
+
+type Authenticator interface {
+	Login(user, password string) (string, error)
+}
+
+func NewLoginHandler(log *slog.Logger, auth Authenticator) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+	}
+}
+
 type pingResponse struct {
 	Replies map[string]string `json:"replies"`
 }

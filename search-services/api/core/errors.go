@@ -2,8 +2,6 @@ package core
 
 import "errors"
 
-var (
-	ErrBadArguments   = errors.New("arguments are not acceptable")
-	ErrAlreadyExists  = errors.New("resource or task already exists")
-	ErrPhraseTooLarge = errors.New("phrase cannot be larger than 4KiB")
-)
+var ErrBadArguments = errors.New("arguments are not acceptable")
+var ErrAlreadyExists = errors.New("resource or task already exists")
+var ErrNotFound = errors.New("resource is not found")

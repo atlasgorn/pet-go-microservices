@@ -15,7 +15,8 @@ type UpdateStats struct {
 	ComicsTotal   int
 }
 
-type PbComic struct {
-	ID  int
-	URL string
+type Comics struct {
+	ID    int
+	URL   string
+	Score int
 }

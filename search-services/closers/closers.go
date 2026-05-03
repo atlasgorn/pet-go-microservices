@@ -6,7 +6,7 @@ import (
 )
 
 func CloseOrLog(c io.Closer, l *slog.Logger) {
-	if err := c.Close(); err != nil {
+	if err := c.Close(); err != nil && l != nil {
 		l.Error("close failed", "error", err)
 	}
 }

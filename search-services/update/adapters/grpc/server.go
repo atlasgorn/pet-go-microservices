@@ -39,7 +39,10 @@ func (s *Server) Update(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, 
 	if errors.Is(err, core.ErrAlreadyExists) {
 		return nil, status.Errorf(codes.AlreadyExists, "resource or task already exists")
 	}
-	return nil, err
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	return nil, nil
 }
 
 func (s *Server) Stats(ctx context.Context, _ *emptypb.Empty) (*updatepb.StatsReply, error) {
@@ -57,5 +60,9 @@ func (s *Server) Stats(ctx context.Context, _ *emptypb.Empty) (*updatepb.StatsRe
 }
 
 func (s *Server) Drop(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	return nil, s.service.Drop(ctx)
+	err := s.service.Drop(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	return nil, nil
 }

@@ -19,5 +19,5 @@ golint:
 
 test:
 	go test -race -coverprofile cover.out \
-		$(shell go list ./... | egrep -v 'yadro.com/course/(proto|api$$|update$$|words$$|search$$)')
+		$(shell go list ./... | egrep -v 'yadro.com/course/(proto|api$$|update$$|words$$|search$$|.*/mocks)')
 	go tool cover -html cover.out -o cover.html

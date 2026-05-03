@@ -27,6 +27,7 @@ func NewClient(address string, log *slog.Logger) (*Client, error) {
 	return &Client{
 		log:    log,
 		client: wordspb.NewWordsClient(conn),
+		conn:   conn,
 	}, nil
 }
 
